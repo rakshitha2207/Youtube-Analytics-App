@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
-console.log("Hello from Functions!");
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 Deno.serve(async (req) => {
   try {
@@ -16,7 +15,7 @@ Deno.serve(async (req) => {
     }
 
     const response = await fetch(
-      `https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_lk538t2k2p1k3oos71&include_errors=true`,
+      `https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_lk538t2k2p1k3oos71&endpoint=${Deno.env.get("SUPABASE_URL")}/functions/v1/collection_webhook&format=json&uncompressed_webhook=true&include_errors=true`,
       {
         headers: {
           Authorization: `Bearer ${Deno.env.get("BRIGHT_DATA_API_KEY")}`,
@@ -37,7 +36,20 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("response: ", data);
+    
+    // Store job data in database
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+
+    const result = await supabase.from("scrape_jobs").insert({
+      id: data.snapshot_id,
+      status: "running",
+  }).select().single();
+
+    console.log("result: ",result)
 
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json" },
