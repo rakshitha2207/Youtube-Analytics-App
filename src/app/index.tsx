@@ -4,6 +4,7 @@ import { View, Text, TextInput, Image, ScrollView, Pressable } from 'react-nativ
 import { router } from 'expo-router';
 
 import { Container } from '~/components/Container';
+import { supabase } from '~/lib/supabase';
 
 const popularChannels = [
   {
@@ -23,6 +24,21 @@ const popularChannels = [
 
 export default function Home() {
   const [searchInput, setSearchInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+
+  const [url, setUrl] = useState('');
+
+
+  const startAnalyzing = async () => {
+    const {error, data} = await supabase.functions.invoke('trigger_collection_api',
+    { body: {url}
+  });
+  console.log('error: ', error);
+  console.log('data: ', data);
+};
+
   const [recentSearches, setRecentSearches] = useState([
     { name: 'Theo - t3.gg', handle: '@t3dotgg', timestamp: '2h ago' },
     { name: 'Vercel', handle: '@vercel', timestamp: '1d ago' },
@@ -57,19 +73,28 @@ export default function Home() {
               <View className="bg-gray-50 rounded-xl p-4 flex-row items-center border border-gray-100">
                 <TextInput
                   placeholder="Paste YouTube channel URL or @handle"
-                  value={searchInput}
-                  onChangeText={setSearchInput}
-                  onSubmitEditing={handleSearch}
+                  value={url}
+                  onChangeText={setUrl}
+                  onSubmitEditing={startAnalyzing}
                   className="flex-1 text-base"
                   placeholderTextColor="#666"
                 />
                 <Pressable
-                  onPress={handleSearch}
-                  className="bg-red-600 px-8 py-3 rounded-lg ml-2"
+                  onPress={startAnalyzing}
+                  className={`px-8 py-3 rounded-lg ml-2 ${
+                    isLoading ? 'bg-gray-400' : 'bg-red-600'
+                  }`}
                 >
-                  <Text className="text-white font-semibold text-base">Analyze</Text>
+                  <Text className="text-white font-semibold text-base">
+                    {isLoading ? 'Analyzing...' : 'Analyze'}
+                  </Text>
                 </Pressable>
               </View>
+              {error && (
+                <Text className="text-red-500 mt-2 text-sm">
+                  {error}
+                </Text>
+              )}
             </View>
           </View>
 
