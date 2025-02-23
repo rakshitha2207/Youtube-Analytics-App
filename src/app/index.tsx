@@ -1,143 +1,137 @@
-import { Stack } from 'expo-router';
-import React, { useState } from 'react';
-import { View, Text, TextInput, Image, ScrollView, Pressable } from 'react-native';
-import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { Stack, Link, router } from 'expo-router';
+import { useState } from 'react';
+import { View, Text, TextInput, ScrollView, Pressable, Alert, Image } from 'react-native';
 
 import { Container } from '~/components/Container';
+import { YT_CHANNELS_DATASET_ID } from '~/lib/constants';
 import { supabase } from '~/lib/supabase';
 
-const popularChannels = [
-  {
-    id: '1',
-    name: 'MKBHD',
-    handle: '@MKBHD',
-    image: 'https://yt3.googleusercontent.com/lkH37D712tiyphnu0Id0D5MwwQ7IRuwgQLVD05iMXlDWO-kDHut3uI4MgIEAQ9StK1b66O24=s176-c-k-c0x00ffffff-no-rj',
-  },
-  {
-    id: '2',
-    name: 'Fireship',
-    handle: '@Fireship',
-    image: 'https://yt3.googleusercontent.com/ytc/AIf8zZTUVa5AeFd3YYJmg6nKn2QjT2_QIxgHHi2P8ejWig=s176-c-k-c0x00ffffff-no-rj',
-  },
-  // Add more popular channels as needed
+const POPULAR_CHANNELS = [
+  { name: 'notJustDev', id: 'UCYSa_YLoJokZAwHhlwJntIA' },
+  { name: 'PewDiePie', id: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw' },
 ];
 
-export default function Home() {
-  const [searchInput, setSearchInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-
-  const [url, setUrl] = useState('');
-
-
-  const startAnalyzing = async () => {
-    const {error, data} = await supabase.functions.invoke('trigger_collection_api',
-    { body: {url}
-  });
-  console.log('error: ', error);
-  console.log('data: ', data);
+const fetchChannels = async () => {
+  const { data, error } = await supabase
+    .from('yt_channels')
+    .select('*')
+    .order('updated_at', { ascending: false });
+  if (error) {
+    throw error;
+  }
+  return data;
 };
 
-  const [recentSearches, setRecentSearches] = useState([
-    { name: 'Theo - t3.gg', handle: '@t3dotgg', timestamp: '2h ago' },
-    { name: 'Vercel', handle: '@vercel', timestamp: '1d ago' },
-  ]);
+export default function Home() {
+  const [url, setUrl] = useState('');
 
-  const handleSearch = () => {
-    if (searchInput.trim()) {
-      router.push('/channel');
-      // Add to recent searches logic here
+  const {
+    data: channels,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['channels'],
+    queryFn: () => fetchChannels(),
+  });
+
+  const startAnalyzing = async () => {
+    if (!url) {
+      return;
     }
+    // check if data about this channel already exists
+    const { data: channels, error: channelsError } = await supabase
+      .from('yt_channels')
+      .select('*')
+      .eq('url', url);
+
+    if (channels && channels.length > 0) {
+      router.push(`/channel/${channels[0].id}`);
+      return;
+    }
+
+    const { error, data } = await supabase.functions.invoke('trigger_collection_api', {
+      body: { input: [{ url }], dataset_id: YT_CHANNELS_DATASET_ID },
+    });
+
+    if (error) {
+      Alert.alert('Error', error.message);
+      return;
+    }
+
+    router.push(`/job/${data.id}`);
   };
 
   return (
-    <ScrollView className="flex-1 bg-white">
-      <Stack.Screen options={{ title: 'YouTube Analysis' }} />
-      <Container>
-        {/* Hero Section */}
-        <View className="py-16">
-          <Text className="text-4xl font-bold text-center mb-3">
-            YouTube Channel Analysis
-          </Text>
-          <Text className="text-gray-600 text-center text-lg mb-12">
-            Get detailed insights about any YouTube channel
-          </Text>
-
-          {/* Enhanced Search Input */}
-          <View className="shadow-2xl">
-            <View className="bg-white rounded-2xl p-6 border border-gray-100">
-              <Text className="text-gray-700 font-medium mb-2">
-                Enter channel details
-              </Text>
-              <View className="bg-gray-50 rounded-xl p-4 flex-row items-center border border-gray-100">
+    <>
+      <Stack.Screen options={{ title: 'YouTube Analyzer' }} />
+      <View className="flex-1 bg-white p-2">
+        <ScrollView className="flex-1">
+          {/* Hero Section */}
+          <View className="py-12">
+            <Text className="mb-2 text-center text-4xl font-bold">YouTube Channel Analyzer</Text>
+            <Text className="mb-8 text-center text-gray-600">
+              Discover insights about any YouTube channel
+            </Text>
+            {/* Search Input */}
+            <View className="px-4">
+              <View className="flex-row items-center space-x-2 rounded-2xl bg-gray-100 p-2 shadow-sm">
                 <TextInput
-                  placeholder="Paste YouTube channel URL or @handle"
                   value={url}
                   onChangeText={setUrl}
-                  onSubmitEditing={startAnalyzing}
-                  className="flex-1 text-base"
-                  placeholderTextColor="#666"
+                  placeholder="Paste YouTube channel URL"
+                  placeholderTextColor="#6B7280"
+                  className="h-12 flex-1 px-4 text-lg text-gray-900"
                 />
+
                 <Pressable
                   onPress={startAnalyzing}
-                  className={`px-8 py-3 rounded-lg ml-2 ${
-                    isLoading ? 'bg-gray-400' : 'bg-red-600'
-                  }`}
-                >
-                  <Text className="text-white font-semibold text-base">
-                    {isLoading ? 'Analyzing...' : 'Analyze'}
-                  </Text>
+                  className="h-12 items-center justify-center rounded-xl bg-red-600 px-8">
+                  <Text className="text-lg font-semibold text-white">Analyze</Text>
                 </Pressable>
               </View>
-              {error && (
-                <Text className="text-red-500 mt-2 text-sm">
-                  {error}
-                </Text>
-              )}
+              <Text className="mt-2 text-center text-sm text-gray-500">
+                Example: https://youtube.com/@mkbhd
+              </Text>
+            </View>
+            {/* Popular Channels */}
+            <View className="mt-12">
+              <Text className="mb-4 px-4 text-lg font-semibold">Popular Channels</Text>
+              <View className="flex-row flex-wrap gap-2 px-4">
+                {POPULAR_CHANNELS.map((channel) => (
+                  <Link key={channel.id} href={`/channel/${channel.id}`} asChild>
+                    <Pressable className="rounded-full bg-gray-100 px-4 py-2">
+                      <Text className="text-gray-900">{channel.name}</Text>
+                    </Pressable>
+                  </Link>
+                ))}
+              </View>
+            </View>
+            {/* Recent Searches */}
+            <View className="mt-12">
+              <Text className="mb-4 px-4 text-lg font-semibold">Recent Searches</Text>
+              <View className="divide-y divide-gray-200">
+                {(channels || []).map((channel) => (
+                  <Link key={channel.id} href={`/channel/${channel.id}`} asChild>
+                    <Pressable className="flex-row items-center gap-4 px-4 py-4">
+                      <Image
+                        source={{ uri: channel.profile_image }}
+                        className="h-10 w-10 rounded-full"
+                      />
+                      <View>
+                        <Text className="font-medium">{channel.name}</Text>
+                        <Text className="text-sm text-gray-600">
+                          {channel.subscribers} subscribers
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </Link>
+                ))}
+              </View>
             </View>
           </View>
-
-          {/* Popular Channels */}
-          <View className="mt-12">
-            <Text className="text-xl font-semibold mb-4">Popular Channels</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {popularChannels.map((channel) => (
-                <Pressable
-                  key={channel.id}
-                  className="mr-4 items-center"
-                  onPress={() => router.push('/channel')}
-                >
-                  <Image
-                    source={{ uri: channel.image }}
-                    className="w-20 h-20 rounded-full mb-2"
-                  />
-                  <Text className="font-medium text-center">{channel.name}</Text>
-                  <Text className="text-gray-600 text-sm">{channel.handle}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Recent Searches */}
-          <View className="mt-12">
-            <Text className="text-xl font-semibold mb-4">Recent Searches</Text>
-            {recentSearches.map((search, index) => (
-              <Pressable
-                key={index}
-                className="flex-row items-center py-3 border-b border-gray-100"
-                onPress={() => router.push('/channel')}
-              >
-                <View className="flex-1">
-                  <Text className="font-medium">{search.name}</Text>
-                  <Text className="text-gray-600 text-sm">{search.handle}</Text>
-                </View>
-                <Text className="text-gray-400 text-sm">{search.timestamp}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </Container>
-    </ScrollView>
+        </ScrollView>
+      </View>
+    </>
   );
 }
