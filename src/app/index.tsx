@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Alert, Image } from 'react-native';
 
 import { Container } from '~/components/Container';
-import { YT_CHANNELS_DATASET_ID } from '~/lib/constants';
+import { YT_CHANNELS_DATASET_ID } from '~/constants';
 import { supabase } from '~/lib/supabase';
 
 const POPULAR_CHANNELS = [

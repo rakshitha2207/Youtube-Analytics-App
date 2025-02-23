@@ -1,12 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 // const YT_CHANNELS = "gd_lk538t2k2p1k3oos71"
+
+
 Deno.serve(async (req) => {
   const { input, dataset_id, extra_params } = await req.json();
 
   const response = await fetch(
-    `https://api.brightdata.com/datasets/v3/trigger?dataset_id=${dataset_id}&endpoint=${
-      Deno.env.get("SUPABASE_URL")
+    `https://api.brightdata.com/datasets/v3/trigger?dataset_id=${dataset_id}&endpoint=${Deno.env.get("SUPABASE_URL")
     }/functions/v1/collection_webhook&format=json&uncompressed_webhook=true&include_errors=true&${extra_params}`,
     {
       headers: {
@@ -44,3 +45,14 @@ Deno.serve(async (req) => {
   });
 });
 
+/* To invoke locally:
+
+  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
+  2. Make an HTTP request:
+
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/trigger_collection_api' \
+    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
+    --header 'Content-Type: application/json' \
+    --data '{"name":"Functions"}'
+
+*/

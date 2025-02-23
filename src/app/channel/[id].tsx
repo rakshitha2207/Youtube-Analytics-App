@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { View, Text, Image, ScrollView, Alert, Pressable } from 'react-native';
 import { Button } from '~/components/Button';
-import { YT_VIDEOS_DATASET_ID } from '~/lib/constants';
+import { YT_VIDEOS_DATASET_ID } from '~/constants';
 import { supabase } from '~/lib/supabase';
 
 const fetchChannel = async (id: string) => {

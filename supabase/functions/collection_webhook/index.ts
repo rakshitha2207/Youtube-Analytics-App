@@ -1,9 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
 const YT_CHANNELS_DATASET_ID = "gd_lk538t2k2p1k3oos71";
-const YT_VIDEOS_DATASET_ID = "gd_lk56epmy2i5g7lzu0k";
+const YT_VIDEOS_DATASET_ID = "gd_lk56epmy2i5g7lzu0k"; 
 
 async function saveChannel(
   supabase: SupabaseClient,
