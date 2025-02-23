@@ -46,6 +46,7 @@ async function saveVideos(
   const { error } = await supabase.from("yt_videos").upsert(
     data.map((item: any) => ({
       id: item.video_id,
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       url: item.url,
       title: item.title,
