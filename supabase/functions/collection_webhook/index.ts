@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const YT_CHANNELS_DATASET_ID = "gd_lk538t2k2p1k3oos71";
-const YT_VIDEOS_DATASET_ID = "gd_lk56epmy2i5g7lzu0k"; 
+const YT_VIDEOS_DATASET_ID = "gd_lk56epmy2i5g7lzu0k";
 
 async function saveChannel(
   supabase: SupabaseClient,
@@ -63,7 +63,7 @@ async function saveVideos(
   // update scrape_jobs table status to "ready"
   await supabase.from("scrape_jobs").update({
     status: "ready",
-    // channel_id: data[0].youtuber_id,
+    channel_id: data[0].youtuber_id,
   }).eq(
     "id",
     snapshot_id,
